@@ -50,6 +50,7 @@ ExportContext::ExportContext(DeclContext *DC,
   Exported = exported;
   Implicit = implicit;
   Deprecated = deprecated;
+  IgnoresDeprecation = ignoresDeprecation;
   if (unavailablePlatformKind) {
     Unavailable = 1;
     Platform = unsigned(*unavailablePlatformKind);
@@ -178,7 +179,7 @@ static void forEachOuterDecl(DeclContext *DC, Fn fn) {
 }
 
 static void computeExportContextBits(ASTContext &Ctx, Decl *D,
-                                     bool *spi, bool *implicit, bool *deprecated,
+                                     bool *spi, bool *implicit, bool *deprecated, bool *ignoresDeprecation
                                      Optional<PlatformKind> *unavailablePlatformKind) {
   if (D->isSPI() ||
       D->isAvailableAsSPI())
@@ -198,10 +199,13 @@ static void computeExportContextBits(ASTContext &Ctx, Decl *D,
     *unavailablePlatformKind = A->Platform;
   }
 
+  if (const auto *a = D->getAttrs().getAttribute<IgnoreDeprecationsAttr>())
+    *ignoresDeprecation = true;
+
   if (auto *PBD = dyn_cast<PatternBindingDecl>(D)) {
     for (unsigned i = 0, e = PBD->getNumPatternEntries(); i < e; ++i) {
       if (auto *VD = PBD->getAnchoringVarDecl(i))
-        computeExportContextBits(Ctx, VD, spi, implicit, deprecated,
+        computeExportContextBits(Ctx, VD, spi, implicit, deprecated, ignoresDeprecation
                                  unavailablePlatformKind);
     }
   }
@@ -219,20 +223,21 @@ ExportContext ExportContext::forDeclSignature(Decl *D) {
   bool spi = Ctx.LangOpts.LibraryLevel == LibraryLevel::SPI;
   bool implicit = false;
   bool deprecated = false;
+  bool ignoresDeprecation = false;
   Optional<PlatformKind> unavailablePlatformKind;
-  computeExportContextBits(Ctx, D, &spi, &implicit, &deprecated,
+  computeExportContextBits(Ctx, D, &spi, &implicit, &deprecated, &ignoresDeprecation
                            &unavailablePlatformKind);
   forEachOuterDecl(D->getDeclContext(),
                    [&](Decl *D) {
                      computeExportContextBits(Ctx, D,
-                                              &spi, &implicit, &deprecated,
+                                              &spi, &implicit, &deprecated, &ignoresDeprecation,
                                               &unavailablePlatformKind);
                    });
 
   bool exported = ::isExported(D);
 
   return ExportContext(DC, runningOSVersion, fragileKind,
-                       spi, exported, implicit, deprecated,
+                       spi, exported, implicit, deprecated, ignoresDeprecation,
                        unavailablePlatformKind);
 }
 
@@ -252,14 +257,14 @@ ExportContext ExportContext::forFunctionBody(DeclContext *DC, SourceLoc loc) {
   forEachOuterDecl(DC,
                    [&](Decl *D) {
                      computeExportContextBits(Ctx, D,
-                                              &spi, &implicit, &deprecated,
+                                              &spi, &implicit, &deprecated, &ignoresDeprecation,
                                               &unavailablePlatformKind);
                    });
 
   bool exported = false;
 
   return ExportContext(DC, runningOSVersion, fragileKind,
-                       spi, exported, implicit, deprecated,
+                       spi, exported, implicit, deprecated, ignoresDeprecation,
                        unavailablePlatformKind);
 }
 
@@ -2621,7 +2626,7 @@ void TypeChecker::diagnoseIfDeprecated(SourceRange ReferenceRange,
   // We match the behavior of clang to not report deprecation warnings
   // inside declarations that are themselves deprecated on all deployment
   // targets.
-  if (Where.isDeprecated()) {
+  if (Where.isDeprecated() || Where.ignoresDeprecation()) {
     return;
   }
 
@@ -2702,7 +2707,7 @@ bool TypeChecker::diagnoseIfDeprecated(SourceLoc loc,
   // We match the behavior of clang to not report deprecation warnings
   // inside declarations that are themselves deprecated on all deployment
   // targets.
-  if (where.isDeprecated()) {
+  if (where.isDeprecated() || where.ignoresDeprecation()) {
     return false;
   }
 

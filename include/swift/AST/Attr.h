@@ -1042,6 +1042,15 @@ public:
   }
 };
 
+class IgnoreDeprecationsAttr : public DeclAttribute {
+  // DON'T MERGE before adding an array or something to check for the types to ignore deprecations warnings for
+  // then checking them in computeExportContextBits
+
+  static bool classof(const DeclAttribute *DA) {
+    return DA->getKind() == DAK_IgnoreDeprecations;
+  }
+};
+
 /// The \c @_typeEraser(TypeEraserType) attribute.
 class TypeEraserAttr final : public DeclAttribute {
   TypeExpr *TypeEraserExpr;
