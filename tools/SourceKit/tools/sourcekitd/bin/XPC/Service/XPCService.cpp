@@ -142,7 +142,7 @@ static UIdent xpcUIdentFromSKDUID(sourcekitd_uid_t SKDUID) {
   UID = UIdent(Str);
   UID.setTag(SKDUID);
   UIDMap.set(SKDUID, UID);
-
+    
   xpc_release(reply);
   return UID;
 }

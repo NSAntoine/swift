@@ -2092,6 +2092,15 @@ namespace decls_block {
     BCArray<IdentifierIDField>
   >;
 
+  using IgnoreDeprecationsDeclAttrLayout = BCRecordLayout<
+    IgnoreDeprecations_DECL_ATTR,
+    BCFixed<1>, // implicit flag
+    BCFixed<1>, // Swift 3 inferred
+    BCFixed<1>, // implicit name flag
+    BCVBR<4>,   // # of arguments (+1) or zero if no name
+    BCArray<IdentifierIDField>
+  >;
+
   using ObjCImplementationDeclAttrLayout = BCRecordLayout<
     ObjCImplementation_DECL_ATTR,
     BCFixed<1>,                // implicit flag

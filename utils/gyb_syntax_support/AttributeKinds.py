@@ -720,7 +720,15 @@ DECL_ATTR_KINDS = [
     SimpleDeclAttribute('runtimeMetadata', 'RuntimeMetadata',
                         OnStruct, OnClass,
                         ABIBreakingToAdd, ABIBreakingToRemove, APIBreakingToAdd, APIBreakingToRemove,  # noqa: E501
-                        code=139)
+                        code=139),
+
+    DeclAttribute('ignoreDeprecations', 'IgnoreDeprecations',
+                        OnAbstractFunction, OnGenericType, OnVar, OnEnumElement, 
+                        OnExtension, AllowMultipleAttributes, LongAttribute,
+                        ABIStableToAdd, ABIStableToRemove, APIStableToAdd, APIStableToRemove,
+                        LongAttribute, UserInaccessible, ABIStableToAdd, ABIStableToRemove,
+                        APIStableToAdd, APIStableToRemove,
+                        code=142),
 ]
 
 # Schema for declaration modifiers:

@@ -2277,6 +2277,12 @@ public:
   }
 };
 
+class IgnoreDeprecationsAttr : public DeclAttribute {
+  static bool classof(const DeclAttribute *DA) {
+    return DA->getKind() == DAK_IgnoreDeprecations;
+  }
+};
+
 class ObjCImplementationAttr final : public DeclAttribute {
 public:
   Identifier CategoryName;
